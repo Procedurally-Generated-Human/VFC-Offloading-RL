@@ -131,9 +131,3 @@ class MovingTransmissionDist(ciw.dists.Distribution):
     def sample(self, t=None, ind=None):
         coefficient =  np.linalg.norm(self.coords[math.trunc(t)] - np.array([500,500])) /700
         return (ind.sz/self.bw)*coefficient
-
-
-
-
-
-

@@ -2,7 +2,7 @@ import gymnasium as gym
 import ciw
 import numpy as np
 import matplotlib.pyplot as plt 
-
+import random
 from movement import create_random_walk
 from custom_components import MovingTransmissionDist, ComputationDist, StationaryTransmissionDist, CustomSimulation, CustomNode, CustomArrival, CustomIndividual
 from animate import Animator
@@ -26,8 +26,14 @@ class VFCOffloadingEnv(gym.Env):
         walk_3 = create_random_walk(self.n_timesteps)
         walk_4 = create_random_walk(self.n_timesteps)
         walk_5 = create_random_walk(self.n_timesteps)
+        parked_1 = [random.choice([220,420,620,820]),random.choice([220,420,620,820])]
+        parked_2 = [random.choice([220,420,620,820]),random.choice([220,420,620,820])]
+        bw1 = 800
+        bw2 = 800
+        cpu1 = 4000
+        cpu2 = 3500
         if self.render_mode == "human":
-            self.anim = Animator([walk_1,walk_2,walk_3,walk_4,walk_5])
+            self.anim = Animator([walk_1,walk_2,walk_3,walk_4,walk_5],[parked_1,parked_2],[[bw1,cpu1],[bw2,cpu2]])
         self.N = ciw.create_network(
             arrival_distributions=[ciw.dists.Exponential(rate=3),   #client-trns-1       1
                            ciw.dists.Exponential(rate=3),           #client-trns-2       2
@@ -48,14 +54,14 @@ class VFCOffloadingEnv(gym.Env):
                            MovingTransmissionDist(bw=500,coords=walk_3),        #client-trns-3       3
                            MovingTransmissionDist(bw=600,coords=walk_4),        #client-trns-4       4
                            MovingTransmissionDist(bw=500,coords=walk_5),        #client-trns-5       5
-                           ciw.dists.Deterministic(value=0.0000001),                #rsu-trns            6
+                           ciw.dists.Deterministic(value=0.0000001),           #rsu-trns            6
                            ComputationDist(mips=4500),                        #rsu-cpu             7
                            StationaryTransmissionDist(bw=1000,x=0,y=0),       #trns-to-cloud       8
                            ComputationDist(mips=6000),                        #cloud-cpu           9
-                           StationaryTransmissionDist(bw=800,x=0,y=0),        #trns-to-service-1  10
-                           ComputationDist(mips=4000),                        #service-cpu-1      11
-                           StationaryTransmissionDist(bw=800,x=0,y=0),        #trns-to-service-2  12
-                           ComputationDist(mips=3500),                        #service-cpu-2      13
+                           StationaryTransmissionDist(bw=bw1,x=parked_1[0],y=parked_1[1]),        #trns-to-service-1  10
+                           ComputationDist(mips=cpu1),                        #service-cpu-1      11
+                           StationaryTransmissionDist(bw=bw2,x=parked_2[0],y=parked_2[1]),        #trns-to-service-2  12
+                           ComputationDist(mips=cpu2),                        #service-cpu-2      13
                            ],
                        #1,2,3,4,5,6,7,8,9,0,1,2,3           
             routing = [[0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],
@@ -108,8 +114,10 @@ class VFCOffloadingEnv(gym.Env):
             obs = np.array(self.Q.statetracker.history[-1][1], dtype=np.float32)[6:]
             obs = np.concatenate((obs, np.array([task_cu,task_sz], dtype=np.float32)))
         if self.render_mode == "human":
-            self.anim.add_frame(time)
-            if ter:
+            if not ter:
+                emitted_node = self.Q.nodes[6].all_individuals[0].data_records[0].node
+                self.anim.add_frame(time, emitted_node, action)
+            else:
                 self.anim.show_animation()
         return obs, rew, ter, tur, info
 
