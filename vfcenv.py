@@ -7,13 +7,14 @@ from movement import create_random_walk
 from custom_components import MovingTransmissionDist, ComputationDist, StationaryTransmissionDist, CustomSimulation, CustomNode, CustomArrival, CustomIndividual
 from animate import Animator
 
+np.set_printoptions(suppress=True)
 
 
 class VFCOffloadingEnv(gym.Env):
 
     def __init__(self, n_timesteps, render_mode=None) -> None:
         self.action_space = gym.spaces.Discrete(4)
-        self.observation_space =  gym.spaces.Box(0,10,(9,))
+        self.observation_space =  gym.spaces.Box(0,10,(20,))
         self.n_timesteps = n_timesteps
         self.current_timestep = 0
         self.render_mode = render_mode
@@ -26,14 +27,17 @@ class VFCOffloadingEnv(gym.Env):
         walk_3 = create_random_walk(self.n_timesteps)
         walk_4 = create_random_walk(self.n_timesteps)
         walk_5 = create_random_walk(self.n_timesteps)
-        parked_1 = [random.choice([220,420,620,820]),random.choice([220,420,620,820])]
-        parked_2 = [random.choice([220,420,620,820]),random.choice([220,420,620,820])]
-        bw1 = 800
-        bw2 = 800
-        cpu1 = 4000
-        cpu2 = 3500
+        self.parked_1 = [random.choice([220,420,620,820]),random.choice([220,420,620,820])]
+        self.parked_2 = [random.choice([220,420,620,820]),random.choice([220,420,620,820])]
+        self.bw1 = 800
+        self.bw2 = 800
+        self.cpu1 = 4000
+        self.cpu2 = 3500
+        self.rsu_cpu = 4500
+        self.cloud_cpu = 6000
+        self.cloud_bw = 1000
         if self.render_mode == "human":
-            self.anim = Animator([walk_1,walk_2,walk_3,walk_4,walk_5],[parked_1,parked_2],[[bw1,cpu1],[bw2,cpu2]])
+            self.anim = Animator([walk_1,walk_2,walk_3,walk_4,walk_5],[self.parked_1,self.parked_2],[[self.bw1,self.cpu1],[self.bw2,self.cpu2]])
         self.N = ciw.create_network(
             arrival_distributions=[ciw.dists.Exponential(rate=3),   #client-trns-1       1
                            ciw.dists.Exponential(rate=3),           #client-trns-2       2
@@ -54,14 +58,14 @@ class VFCOffloadingEnv(gym.Env):
                            MovingTransmissionDist(bw=500,coords=walk_3),        #client-trns-3       3
                            MovingTransmissionDist(bw=600,coords=walk_4),        #client-trns-4       4
                            MovingTransmissionDist(bw=500,coords=walk_5),        #client-trns-5       5
-                           ciw.dists.Deterministic(value=0.0000001),           #rsu-trns            6
-                           ComputationDist(mips=4500),                        #rsu-cpu             7
-                           StationaryTransmissionDist(bw=1000,x=0,y=0),       #trns-to-cloud       8
-                           ComputationDist(mips=6000),                        #cloud-cpu           9
-                           StationaryTransmissionDist(bw=bw1,x=parked_1[0],y=parked_1[1]),        #trns-to-service-1  10
-                           ComputationDist(mips=cpu1),                        #service-cpu-1      11
-                           StationaryTransmissionDist(bw=bw2,x=parked_2[0],y=parked_2[1]),        #trns-to-service-2  12
-                           ComputationDist(mips=cpu2),                        #service-cpu-2      13
+                           ciw.dists.Deterministic(value=0.0000001),            #rsu-trns            6
+                           ComputationDist(mips=self.rsu_cpu),                  #rsu-cpu             7
+                           StationaryTransmissionDist(bw=self.cloud_bw,x=0,y=0),         #trns-to-cloud       8
+                           ComputationDist(mips=self.cloud_cpu),                #cloud-cpu           9
+                           StationaryTransmissionDist(bw=self.bw1,x=self.parked_1[0],y=self.parked_1[1]),        #trns-to-service-1  10
+                           ComputationDist(mips=self.cpu1),                        #service-cpu-1      11
+                           StationaryTransmissionDist(bw=self.bw2,x=self.parked_2[0],y=self.parked_2[1]),        #trns-to-service-2  12
+                           ComputationDist(mips=self.cpu2),                        #service-cpu-2      13
                            ],
                        #1,2,3,4,5,6,7,8,9,0,1,2,3           
             routing = [[0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],
@@ -83,8 +87,15 @@ class VFCOffloadingEnv(gym.Env):
         self.Q.simulate_until_decision(self.n_timesteps)
         task_sz = (self.Q.nodes[6].all_individuals[0].sz - 80)/(120-80)
         task_cu = (self.Q.nodes[6].all_individuals[0].cu - 800)/(1200-800)
-        obs = np.array(self.Q.statetracker.history[-1][1], dtype=np.float32)[6:]
-        obs = np.concatenate((obs, np.array([task_cu,task_sz], dtype=np.float32)))
+        rsu_cpu_queue = sum(tuple(x.cu for x in self.Q.nodes[7].all_individuals))
+        cloud_trans_queue = sum(tuple(x.sz for x in self.Q.nodes[8].all_individuals))
+        cloud_cpu_queue = sum(tuple(x.cu for x in self.Q.nodes[9].all_individuals))
+        service_1_trans_queue = sum(tuple(x.sz for x in self.Q.nodes[10].all_individuals))
+        service_1_cpu_queue = sum(tuple(x.cu for x in self.Q.nodes[11].all_individuals))
+        service_2_trans_queue = sum(tuple(x.sz for x in self.Q.nodes[12].all_individuals))
+        service_2_cpu_queue = sum(tuple(x.cu for x in self.Q.nodes[13].all_individuals))
+        obs = np.array([rsu_cpu_queue,cloud_trans_queue,cloud_cpu_queue,service_1_trans_queue,service_1_cpu_queue,service_2_trans_queue,service_2_cpu_queue], dtype=np.float32)/1000
+        obs = np.concatenate((obs, np.array([task_cu,task_sz], dtype=np.float32), np.array(self.parked_1, dtype=np.float32)/1000, np.array(self.parked_2, dtype=np.float32)/1000, np.array([self.bw1, self.bw2], dtype=np.float32)/800, np.array([self.cpu1, self.cpu2],dtype=np.float32)/4000, np.array([self.cloud_cpu/4000, self.rsu_cpu/4000, self.cloud_bw/800],dtype=np.float32)))
         info = {}
         self.calculated_inds = []
         return obs, info
@@ -111,8 +122,15 @@ class VFCOffloadingEnv(gym.Env):
         if not ter:
             task_sz = (self.Q.nodes[6].all_individuals[0].sz - 80)/(120-80)
             task_cu = (self.Q.nodes[6].all_individuals[0].cu - 800)/(1200-800)
-            obs = np.array(self.Q.statetracker.history[-1][1], dtype=np.float32)[6:]
-            obs = np.concatenate((obs, np.array([task_cu,task_sz], dtype=np.float32)))
+            rsu_cpu_queue = sum(tuple(x.cu for x in self.Q.nodes[7].all_individuals))
+            cloud_trans_queue = sum(tuple(x.sz for x in self.Q.nodes[8].all_individuals))
+            cloud_cpu_queue = sum(tuple(x.cu for x in self.Q.nodes[9].all_individuals))
+            service_1_trans_queue = sum(tuple(x.sz for x in self.Q.nodes[10].all_individuals))
+            service_1_cpu_queue = sum(tuple(x.cu for x in self.Q.nodes[11].all_individuals))
+            service_2_trans_queue = sum(tuple(x.sz for x in self.Q.nodes[12].all_individuals))
+            service_2_cpu_queue = sum(tuple(x.cu for x in self.Q.nodes[13].all_individuals))
+            obs = np.array([rsu_cpu_queue,cloud_trans_queue,cloud_cpu_queue,service_1_trans_queue,service_1_cpu_queue,service_2_trans_queue,service_2_cpu_queue], dtype=np.float32)/1000
+            obs = np.concatenate((obs, np.array([task_cu,task_sz], dtype=np.float32), np.array(self.parked_1, dtype=np.float32)/1000, np.array(self.parked_2, dtype=np.float32)/1000, np.array([self.bw1, self.bw2], dtype=np.float32)/800, np.array([self.cpu1, self.cpu2],dtype=np.float32)/4000, np.array([self.cloud_cpu/4000, self.rsu_cpu/4000, self.cloud_bw/800],dtype=np.float32)))
         if self.render_mode == "human":
             if not ter:
                 emitted_node = self.Q.nodes[6].all_individuals[0].data_records[0].node
@@ -125,13 +143,13 @@ class VFCOffloadingEnv(gym.Env):
 from stable_baselines3 import PPO
 from helpers import shortest_queue
 train_env = VFCOffloadingEnv(100)
-#model = PPO("MlpPolicy", train_env, verbose=1).learn(200000)
-#model.save("200000fullvfc")
-#model = PPO("MlpPolicy", train_env, verbose=1).load("200000fullvfc")
+#model = PPO("MlpPolicy", train_env, verbose=1).learn(300000)
+#model.save("300000ppo")
+#model = PPO("MlpPolicy", train_env, verbose=1).load("300000ppo")
 com_rew = 0
-for i in range(1):
+for i in range(20):
     print(i)
-    env = VFCOffloadingEnv(100, render_mode="human")
+    env = VFCOffloadingEnv(100, render_mode=None)
     obs,_ = env.reset()
     ter = False
     tot_rew = 0
