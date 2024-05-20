@@ -15,10 +15,12 @@ FRAME_INTERVAL = 1000
 
 class Animator(object):
 
-    def __init__(self, walks, parked, parked_hardware):
+    def __init__(self, walks, parked, parked_hardware, rsu_hardware, cloud_hardware):
         self.walks = np.array(walks)
         self.parked = np.array(parked)
         self.parked_hardware = parked_hardware
+        self.rsu_hardware = rsu_hardware
+        self.cloud_hardware = cloud_hardware
         self.fig = plt.figure("Vehicular Fog Computing Simulation")
         self.camera = Camera(self.fig)
         self.rsu_image_black = plt.imread('rsu-black-transparent.png')
@@ -59,7 +61,7 @@ class Animator(object):
             plt.plot([self.parked[1][0],RSU_IMAGE_POSITION[0]], [self.parked[1][1],RSU_IMAGE_POSITION[1]], marker='', color='pink')
         # place simulation details text
         props = dict(boxstyle='round', facecolor='grey', alpha=0.15)
-        details = "-- Simulation Details --"+"\nTime: "+str(round(t,5))+"\nOrigin: "+str(emitted_node)+"\nAction: "+str(action)
+        details = "-- Simulation Details --"+"\nTime: "+str(round(t,5))+"\nOrigin: "+str(emitted_node)+"\nAction: "+str(action)+"\nRSU Cpu: "+str(self.rsu_hardware[0])+"\nCloud BW: "+str(self.cloud_hardware[0])+"\nCloud CPU: "+str(self.cloud_hardware[1])
         plt.text(1050, 1000, details, fontsize=12, verticalalignment='top', bbox=props)
         self.camera.snap()
 

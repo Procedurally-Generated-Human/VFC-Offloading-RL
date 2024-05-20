@@ -6,7 +6,7 @@ import random
 from movement import create_random_walk
 from custom_components import MovingTransmissionDist, ComputationDist, StationaryTransmissionDist, CustomSimulation, CustomNode, CustomArrival, CustomIndividual
 from animate import Animator
-
+from helpers import generate_service_hardware, generate_rsu_hardware, generate_cloud_hardware
 np.set_printoptions(suppress=True)
 
 
@@ -29,15 +29,11 @@ class VFCOffloadingEnv(gym.Env):
         walk_5 = create_random_walk(self.n_timesteps)
         self.parked_1 = [random.choice([220,420,620,820]),random.choice([220,420,620,820])]
         self.parked_2 = [random.choice([220,420,620,820]),random.choice([220,420,620,820])]
-        self.bw1 = 800
-        self.bw2 = 800
-        self.cpu1 = 4000
-        self.cpu2 = 3500
-        self.rsu_cpu = 4500
-        self.cloud_cpu = 6000
-        self.cloud_bw = 1000
+        self.service_vehicles_hardware = generate_service_hardware(2,800,800,3500,4000)
+        self.rsu_hardware = generate_rsu_hardware(4500,4500)
+        self.cloud_hardware = generate_cloud_hardware(1000,1000,6000,6000)
         if self.render_mode == "human":
-            self.anim = Animator([walk_1,walk_2,walk_3,walk_4,walk_5],[self.parked_1,self.parked_2],[[self.bw1,self.cpu1],[self.bw2,self.cpu2]])
+            self.anim = Animator([walk_1,walk_2,walk_3,walk_4,walk_5],[self.parked_1,self.parked_2], self.service_vehicles_hardware, self.rsu_hardware, self.cloud_hardware)
         self.N = ciw.create_network(
             arrival_distributions=[ciw.dists.Exponential(rate=3),   #client-trns-1       1
                            ciw.dists.Exponential(rate=3),           #client-trns-2       2
@@ -59,13 +55,13 @@ class VFCOffloadingEnv(gym.Env):
                            MovingTransmissionDist(bw=600,coords=walk_4),        #client-trns-4       4
                            MovingTransmissionDist(bw=500,coords=walk_5),        #client-trns-5       5
                            ciw.dists.Deterministic(value=0.0000001),            #rsu-trns            6
-                           ComputationDist(mips=self.rsu_cpu),                  #rsu-cpu             7
-                           StationaryTransmissionDist(bw=self.cloud_bw,x=0,y=0),         #trns-to-cloud       8
-                           ComputationDist(mips=self.cloud_cpu),                #cloud-cpu           9
-                           StationaryTransmissionDist(bw=self.bw1,x=self.parked_1[0],y=self.parked_1[1]),        #trns-to-service-1  10
-                           ComputationDist(mips=self.cpu1),                        #service-cpu-1      11
-                           StationaryTransmissionDist(bw=self.bw2,x=self.parked_2[0],y=self.parked_2[1]),        #trns-to-service-2  12
-                           ComputationDist(mips=self.cpu2),                        #service-cpu-2      13
+                           ComputationDist(mips=self.rsu_hardware[0]),                  #rsu-cpu             7
+                           StationaryTransmissionDist(bw=self.cloud_hardware[0],x=0,y=0),         #trns-to-cloud       8
+                           ComputationDist(mips=self.cloud_hardware[1]),                #cloud-cpu           9
+                           StationaryTransmissionDist(bw=self.service_vehicles_hardware[0][0],x=self.parked_1[0],y=self.parked_1[1]),        #trns-to-service-1  10
+                           ComputationDist(mips=self.service_vehicles_hardware[0][1]),                        #service-cpu-1      11
+                           StationaryTransmissionDist(bw=self.service_vehicles_hardware[1][0],x=self.parked_2[0],y=self.parked_2[1]),        #trns-to-service-2  12
+                           ComputationDist(mips=self.service_vehicles_hardware[1][1]),                        #service-cpu-2      13
                            ],
                        #1,2,3,4,5,6,7,8,9,0,1,2,3           
             routing = [[0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],
@@ -85,8 +81,6 @@ class VFCOffloadingEnv(gym.Env):
             )
         self.Q = CustomSimulation(self.N)
         self.Q.simulate_until_decision(self.n_timesteps)
-        task_sz = (self.Q.nodes[6].all_individuals[0].sz - 80)/(120-80)
-        task_cu = (self.Q.nodes[6].all_individuals[0].cu - 800)/(1200-800)
         rsu_cpu_queue = sum(tuple(x.cu for x in self.Q.nodes[7].all_individuals))
         cloud_trans_queue = sum(tuple(x.sz for x in self.Q.nodes[8].all_individuals))
         cloud_cpu_queue = sum(tuple(x.cu for x in self.Q.nodes[9].all_individuals))
@@ -94,8 +88,14 @@ class VFCOffloadingEnv(gym.Env):
         service_1_cpu_queue = sum(tuple(x.cu for x in self.Q.nodes[11].all_individuals))
         service_2_trans_queue = sum(tuple(x.sz for x in self.Q.nodes[12].all_individuals))
         service_2_cpu_queue = sum(tuple(x.cu for x in self.Q.nodes[13].all_individuals))
-        obs = np.array([rsu_cpu_queue,cloud_trans_queue,cloud_cpu_queue,service_1_trans_queue,service_1_cpu_queue,service_2_trans_queue,service_2_cpu_queue], dtype=np.float32)/1000
-        obs = np.concatenate((obs, np.array([task_cu,task_sz], dtype=np.float32), np.array(self.parked_1, dtype=np.float32)/1000, np.array(self.parked_2, dtype=np.float32)/1000, np.array([self.bw1, self.bw2], dtype=np.float32)/800, np.array([self.cpu1, self.cpu2],dtype=np.float32)/4000, np.array([self.cloud_cpu/4000, self.rsu_cpu/4000, self.cloud_bw/800],dtype=np.float32)))
+
+        obs_service_coordinates = np.array(np.concatenate((self.parked_1,self.parked_2)))/1000 #4
+        obs_queues = np.array([rsu_cpu_queue,cloud_trans_queue,cloud_cpu_queue,service_1_trans_queue,service_1_cpu_queue,service_2_trans_queue,service_2_cpu_queue], dtype=np.float32)/1000 #7
+        obs_task_cu = (np.array([self.Q.nodes[6].all_individuals[0].cu])-800)/(1200-800) #1
+        obs_task_sz = (np.array([self.Q.nodes[6].all_individuals[0].sz])-80)/(120-80) #1
+        obs_bw = (np.concatenate(([self.cloud_hardware[0]],self.service_vehicles_hardware[:,0]))-800)/(1000-800) #3
+        obs_cpu = (np.concatenate(([self.cloud_hardware[1]],[self.rsu_hardware[0]],self.service_vehicles_hardware[:,1]))-3500)/(6000-3500) #4
+        obs = np.concatenate((obs_queues, obs_service_coordinates, obs_task_cu, obs_task_sz, obs_bw, obs_cpu),dtype=np.float32)
         info = {}
         self.calculated_inds = []
         return obs, info
@@ -120,8 +120,6 @@ class VFCOffloadingEnv(gym.Env):
         if self.Q.current_time >= self.n_timesteps:
             ter = True
         if not ter:
-            task_sz = (self.Q.nodes[6].all_individuals[0].sz - 80)/(120-80)
-            task_cu = (self.Q.nodes[6].all_individuals[0].cu - 800)/(1200-800)
             rsu_cpu_queue = sum(tuple(x.cu for x in self.Q.nodes[7].all_individuals))
             cloud_trans_queue = sum(tuple(x.sz for x in self.Q.nodes[8].all_individuals))
             cloud_cpu_queue = sum(tuple(x.cu for x in self.Q.nodes[9].all_individuals))
@@ -129,8 +127,14 @@ class VFCOffloadingEnv(gym.Env):
             service_1_cpu_queue = sum(tuple(x.cu for x in self.Q.nodes[11].all_individuals))
             service_2_trans_queue = sum(tuple(x.sz for x in self.Q.nodes[12].all_individuals))
             service_2_cpu_queue = sum(tuple(x.cu for x in self.Q.nodes[13].all_individuals))
-            obs = np.array([rsu_cpu_queue,cloud_trans_queue,cloud_cpu_queue,service_1_trans_queue,service_1_cpu_queue,service_2_trans_queue,service_2_cpu_queue], dtype=np.float32)/1000
-            obs = np.concatenate((obs, np.array([task_cu,task_sz], dtype=np.float32), np.array(self.parked_1, dtype=np.float32)/1000, np.array(self.parked_2, dtype=np.float32)/1000, np.array([self.bw1, self.bw2], dtype=np.float32)/800, np.array([self.cpu1, self.cpu2],dtype=np.float32)/4000, np.array([self.cloud_cpu/4000, self.rsu_cpu/4000, self.cloud_bw/800],dtype=np.float32)))
+
+            obs_service_coordinates = np.array(np.concatenate((self.parked_1,self.parked_2)))/1000 #4
+            obs_queues = np.array([rsu_cpu_queue,cloud_trans_queue,cloud_cpu_queue,service_1_trans_queue,service_1_cpu_queue,service_2_trans_queue,service_2_cpu_queue], dtype=np.float32)/1000 #7
+            obs_task_cu = (np.array([self.Q.nodes[6].all_individuals[0].cu])-800)/(1200-800) #1
+            obs_task_sz = (np.array([self.Q.nodes[6].all_individuals[0].sz])-80)/(120-80) #1
+            obs_bw = (np.concatenate(([self.cloud_hardware[0]],self.service_vehicles_hardware[:,0]))-800)/(1000-800) #3
+            obs_cpu = (np.concatenate(([self.cloud_hardware[1]],[self.rsu_hardware[0]],self.service_vehicles_hardware[:,1]))-3500)/(6000-3500) #4
+            obs = np.concatenate((obs_queues, obs_service_coordinates, obs_task_cu, obs_task_sz, obs_bw, obs_cpu),dtype=np.float32)
         if self.render_mode == "human":
             if not ter:
                 emitted_node = self.Q.nodes[6].all_individuals[0].data_records[0].node
@@ -143,7 +147,7 @@ class VFCOffloadingEnv(gym.Env):
 from stable_baselines3 import PPO
 from helpers import shortest_queue
 train_env = VFCOffloadingEnv(100)
-#model = PPO("MlpPolicy", train_env, verbose=1).learn(300000)
+model = PPO("MlpPolicy", train_env, verbose=1).learn(300000)
 #model.save("300000ppo")
 #model = PPO("MlpPolicy", train_env, verbose=1).load("300000ppo")
 com_rew = 0
@@ -158,8 +162,8 @@ for i in range(20):
             #action = env.action_space.sample()
             #print("Current State:", obs)
             #print("Action Taken:", action)
-            #action = model.predict(obs, deterministic=True)[0]
-            action = shortest_queue(obs)
+            action = model.predict(obs, deterministic=True)[0]
+            #action = shortest_queue(obs)
             #print("action",action)
             obs,rew,ter,_,_ = env.step(action)
             tot_rew += rew
