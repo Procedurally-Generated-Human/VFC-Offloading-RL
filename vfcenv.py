@@ -2,8 +2,7 @@ import gymnasium as gym
 import ciw
 import numpy as np
 import matplotlib.pyplot as plt 
-import random
-from movement import create_random_walk
+from movement import create_random_walk, create_parked_coords
 from custom_components import MovingTransmissionDist, ComputationDist, StationaryTransmissionDist, CustomSimulation, CustomNode, CustomArrival, CustomIndividual
 from animate import Animator
 from helpers import generate_service_hardware, generate_rsu_hardware, generate_cloud_hardware
@@ -27,19 +26,19 @@ class VFCOffloadingEnv(gym.Env):
         walk_3 = create_random_walk(self.n_timesteps)
         walk_4 = create_random_walk(self.n_timesteps)
         walk_5 = create_random_walk(self.n_timesteps)
-        self.parked_1 = [random.choice([220,420,620,820]),random.choice([220,420,620,820])]
-        self.parked_2 = [random.choice([220,420,620,820]),random.choice([220,420,620,820])]
+        self.parked_1 = create_parked_coords()
+        self.parked_2 = create_parked_coords()
         self.service_vehicles_hardware = generate_service_hardware(2,800,800,3500,4000)
         self.rsu_hardware = generate_rsu_hardware(4500,4500)
         self.cloud_hardware = generate_cloud_hardware(1000,1000,6000,6000)
         if self.render_mode == "human":
             self.anim = Animator([walk_1,walk_2,walk_3,walk_4,walk_5],[self.parked_1,self.parked_2], self.service_vehicles_hardware, self.rsu_hardware, self.cloud_hardware)
         self.N = ciw.create_network(
-            arrival_distributions=[ciw.dists.Exponential(rate=3),   #client-trns-1       1
-                           ciw.dists.Exponential(rate=3),           #client-trns-2       2
-                           ciw.dists.Exponential(rate=3),           #client-trns-3       3
-                           ciw.dists.Exponential(rate=3),           #client-trns-4       4
-                           ciw.dists.Exponential(rate=3),           #client-trns-5       5
+            arrival_distributions=[ciw.dists.Exponential(rate=1),   #client-trns-1       1
+                           ciw.dists.Exponential(rate=1),           #client-trns-2       2
+                           ciw.dists.Exponential(rate=1),           #client-trns-3       3
+                           ciw.dists.Exponential(rate=1),           #client-trns-4       4
+                           ciw.dists.Exponential(rate=1),           #client-trns-5       5
                            None,                                    #rsu-trns            6
                            None,                                    #rsu-cpu             7
                            None,                                    #trns-to-cloud       8
@@ -147,13 +146,13 @@ class VFCOffloadingEnv(gym.Env):
 from stable_baselines3 import PPO
 from helpers import shortest_queue
 train_env = VFCOffloadingEnv(100)
-model = PPO("MlpPolicy", train_env, verbose=1).learn(300000)
+#model = PPO("MlpPolicy", train_env, verbose=1).learn(300000)
 #model.save("300000ppo")
 #model = PPO("MlpPolicy", train_env, verbose=1).load("300000ppo")
 com_rew = 0
-for i in range(20):
+for i in range(1):
     print(i)
-    env = VFCOffloadingEnv(100, render_mode=None)
+    env = VFCOffloadingEnv(100, render_mode="human")
     obs,_ = env.reset()
     ter = False
     tot_rew = 0
@@ -162,8 +161,8 @@ for i in range(20):
             #action = env.action_space.sample()
             #print("Current State:", obs)
             #print("Action Taken:", action)
-            action = model.predict(obs, deterministic=True)[0]
-            #action = shortest_queue(obs)
+            #action = model.predict(obs, deterministic=True)[0]
+            action = shortest_queue(obs)
             #print("action",action)
             obs,rew,ter,_,_ = env.step(action)
             tot_rew += rew
