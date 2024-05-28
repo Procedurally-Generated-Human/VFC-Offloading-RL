@@ -90,8 +90,8 @@ class CustomArrival(ciw.ArrivalNode):
             priority_class = self.simulation.network.priority_class_mapping[self.next_class]
             next_individual = self.simulation.IndividualType(
                 self.number_of_individuals,
-                random.randint(800,1200), #cu
-                random.randint(80,120), #sz
+                random.choice([103700,84060,46900,61800,191800,546000,80600,118900,26900,128700,346400])/10, #cu
+                random.randint(5,30), #sz
                 random.random(), #dl
                 self.next_class,
                 priority_class,
@@ -113,37 +113,21 @@ class ComputationDist(ciw.dists.Distribution):
         self.mips = mips
     def sample(self, t=None, ind=None):
         return ind.cu/self.mips
-    
-
-class StationaryTransmissionDist(ciw.dists.Distribution):
-    def __init__(self, bw, x, y):
-        self.bw = bw
-        self.x = x
-        self.y = y
-    def sample(self, t=None, ind=None):
-        return ind.sz/self.bw
 
 
 class StationaryTransmissionDistNew(ciw.dists.Distribution):
-    def __init__(self, bw, x, y):
-        self.bw = bw
+    def __init__(self, x, y):
         self.x = x
         self.y = y
     def sample(self, t=None, ind=None):
-        return ind.sz/self.bw
+        distance = np.linalg.norm((self.x,self.y) - np.array([500,500]))
+        r_div_t = 2*2.15 - 32.44 - 20*math.log10(distance*0.001) - 20*math.log10(5900)
+        r = 10*(10**6)*math.log2(1+((0.2*(10**(r_div_t/10)))/(2*(10**6)*(10**(-17.4)))))
+        return (ind.sz/(r/1_000_000))
     
-
-class MovingTransmissionDist(ciw.dists.Distribution):
-    def __init__(self, bw, coords):
-        self.bw = bw
-        self.coords = coords
-    def sample(self, t=None, ind=None):
-        coefficient =  np.linalg.norm(self.coords[math.trunc(t)] - np.array([500,500])) /700
-        return (ind.sz/self.bw)*coefficient
     
 class MovingTransmissionDistNew(ciw.dists.Distribution):
-    def __init__(self, bw, coords):
-        self.bw = bw
+    def __init__(self, coords):
         self.coords = coords
     def sample(self, t=None, ind=None):
         distance = np.linalg.norm(self.coords[math.trunc(t)] - np.array([500,500]))
@@ -151,88 +135,15 @@ class MovingTransmissionDistNew(ciw.dists.Distribution):
         r = 10*(10**6)*math.log2(1+((0.2*(10**(r_div_t/10)))/(2*(10**6)*(10**(-17.4)))))
         return (ind.sz/(r/1_000_000))
 
-import math
-
-def fspl():
-    snr = (40)
-    return 10_000_000*math.log2(1+snr)
-
-def bwi(x):
-    SNR = (30)/(-100)
-    trans_rate = 1_000_000*math.log2(1+SNR)
-    return trans_rate
-
-def pls(x):
-    oij = x #up
-    lij = 32.4+(20*math.log10(59_000_000))+(20*math.log10(oij)) #up
-    hij = 20+5+5-lij #down
-    snr = (30*hij)/(114) #up
-    return snr
-    trans_rate = 20_000_000*math.log2(1+snr)
-    return trans_rate/8_000_000
-
-
-def chinese_model(x):
-    path_loss = 10*math.log10(((6_000_000_000)/(4*3.14*x))**2)
-    return path_loss
-    yi = (30*path_loss)/144
-    print(yi)
-    bw = 10_000_000*math.log2(1+yi)
-    return bw/8_000_000
-
-
-
-def PL_free(fc, dist, Gt=None, Gr=None):
-    # Free Space Path loss Model
-    # Inputs:
-    #   fc        : carrier frequency [Hz]
-    #   dist      : distance between base station and mobile station [m]
-    #   Gt        : transmitter gain
-    #   Gr        : receiver gain
-    # Output:
-    #   PL        : path loss [dB]
-
-    lambda_ = 299792458 / fc
-    tmp = lambda_ / (4 * math.pi * dist)
-
-    if Gt is not None:
-        tmp *= math.sqrt(Gt)
-    if Gr is not None:
-        tmp *= math.sqrt(Gr)
-
-    PL = -20 * math.log10(tmp)
-
-    return PL
-
-
-def book_formula(fc, dist,):
-    loss = 20*math.log10(fc) + 20*math.log10(dist) - 147.56
-    received_power = 30-loss
-    #snr = 10*math.log10((received_power)/(-144))
-    snr = received_power - (-144)
-    snr = (10**(snr/10))/1000
-    trans_rate = 10_000_000+math.log2(1+snr)
-    print(trans_rate/1_000_000)
-    return trans_rate/1_000_000
-
-def stack_overflow(x):
-    r_div_t = 2*2.15 - 32.44 - 20*math.log10(x*0.001) - 20*math.log10(2400)
-    r = 2*(10**6)*math.log2(1+((0.2*(10**(r_div_t/10)))/(2*(10**6)*(10**(-20.4)))))
-    print(r)
-    return r
-
-
 def final(x):
     r_div_t = 2*2.15 - 32.44 - 20*math.log10(x*0.001) - 20*math.log10(5900)
     r = 10*(10**6)*math.log2(1+((0.2*(10**(r_div_t/10)))/(2*(10**6)*(10**(-17.4)))))
-    print(r)
     return r/1_000_000
 
-import matplotlib.pyplot as plt
 
-a = []
-for i in range(1,1000):
-    a.append(final(i))
-
-plt.scatter([i for i in range(1,1000)],a)
-plt.show()
+# import matplotlib.pyplot as plt
+# a = []
+# for i in range(10,1000):
+#     a.append(final(i))
+# plt.scatter([i for i in range(10,1000)],a)
+# plt.show()

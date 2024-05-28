@@ -3,6 +3,7 @@ from celluloid import Camera
 import numpy as np
 from matplotlib.patches import Rectangle
 import math
+np.set_printoptions(suppress=True)
 
 
 AREA_SIZE = 1000
@@ -32,7 +33,7 @@ class Animator(object):
         plt.gca().xaxis.set_major_locator(plt.MultipleLocator(200))
         plt.gca().yaxis.set_major_locator(plt.MultipleLocator(200))
 
-    def add_frame(self, t, emitted_node, action):
+    def add_frame(self, t, emitted_node, action, obs):
         emitted_node -= 1
         # plot vehicles
         plt.scatter(self.walks[:,math.trunc(t),0],self.walks[:,math.trunc(t),1],c="blue")
@@ -61,7 +62,7 @@ class Animator(object):
             plt.plot([self.parked[1][0],RSU_IMAGE_POSITION[0]], [self.parked[1][1],RSU_IMAGE_POSITION[1]], marker='', color='pink')
         # place simulation details text
         props = dict(boxstyle='round', facecolor='grey', alpha=0.15)
-        details = "-- Simulation Details --"+"\nTime: "+str(round(t,5))+"\nOrigin: "+str(emitted_node)+"\nAction: "+str(action)+"\nRSU Cpu: "+str(self.rsu_hardware[0])+"\nCloud BW: "+str(self.cloud_hardware[0])+"\nCloud CPU: "+str(self.cloud_hardware[1])
+        details = "-- Simulation Details --"+"\nTime: "+str(round(t,5))+"\nOrigin: "+str(emitted_node)+"\nAction: "+str(action)+"\nRSU Cpu: "+str(self.rsu_hardware[0])+"\nCloud BW: "+str(self.cloud_hardware[0])+"\nCloud CPU: "+str(self.cloud_hardware[1])+"\nTrans Queues: "+str(obs[0])+"\nCPU Queues: "+str(obs[1])+"\nTask CU: "+str(obs[2])+"\nTask SZ: "+str(obs[3])
         plt.text(1050, 1000, details, fontsize=12, verticalalignment='top', bbox=props)
         self.camera.snap()
 
