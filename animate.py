@@ -15,7 +15,6 @@ FRAME_INTERVAL = 1000
 
 
 class Animator(object):
-
     def __init__(self, walks, parked, parked_hardware, rsu_hardware, cloud_hardware):
         self.walks = np.array(walks)
         self.parked = np.array(parked)
@@ -58,8 +57,12 @@ class Animator(object):
             plt.plot([CLOUD_IMAGE_POSITION[0],RSU_IMAGE_POSITION[0]], [CLOUD_IMAGE_POSITION[1],RSU_IMAGE_POSITION[1]], marker='', color='pink')
         elif action == 2:
             plt.plot([self.parked[0][0],RSU_IMAGE_POSITION[0]], [self.parked[0][1],RSU_IMAGE_POSITION[1]], marker='', color='pink')
-        else:
+        elif action == 3:
             plt.plot([self.parked[1][0],RSU_IMAGE_POSITION[0]], [self.parked[1][1],RSU_IMAGE_POSITION[1]], marker='', color='pink')
+        elif action == 4:
+            plt.plot([self.parked[2][0],RSU_IMAGE_POSITION[0]], [self.parked[2][1],RSU_IMAGE_POSITION[1]], marker='', color='pink')
+        elif action == 5:
+            plt.plot([self.parked[3][0],RSU_IMAGE_POSITION[0]], [self.parked[3][1],RSU_IMAGE_POSITION[1]], marker='', color='pink')
         # place simulation details text
         props = dict(boxstyle='round', facecolor='grey', alpha=0.15)
         details = "-- Simulation Details --"+"\nTime: "+str(round(t,5))+"\nOrigin: "+str(emitted_node)+"\nAction: "+str(action)+"\nRSU Cpu: "+str(self.rsu_hardware[0])+"\nCloud BW: "+str(self.cloud_hardware[0])+"\nCloud CPU: "+str(self.cloud_hardware[1])+"\nTrans Queues: "+str(obs[0])+"\nCPU Queues: "+str(obs[1])+"\nTask CU: "+str(obs[2])+"\nTask SZ: "+str(obs[3])

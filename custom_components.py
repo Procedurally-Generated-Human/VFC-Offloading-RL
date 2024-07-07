@@ -4,12 +4,9 @@ import math
 import random
 
 
-
 class CustomSimulation(ciw.Simulation):
     def __init__(self, network):
-        super().__init__(network=network, arrival_node_class=CustomArrival, tracker=ciw.trackers.NodePopulation(), individual_class=CustomIndividual,  node_class=[ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, CustomNode,
-                                ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node,
-                                ciw.Node])
+        super().__init__(network=network, arrival_node_class=CustomArrival, tracker=ciw.trackers.NodePopulation(), individual_class=CustomIndividual,  node_class=[ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, CustomNode, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node])
     def simulate_until_decision(self, max_simulation_time):
         next_active_node = self.find_next_active_node()
         self.current_time = next_active_node.next_event_date
@@ -18,6 +15,21 @@ class CustomSimulation(ciw.Simulation):
             self.statetracker.timestamp()
             self.current_time = next_active_node.next_event_date
             if next_active_node == self.nodes[6]:
+                break
+        return self.current_time
+    
+
+class CustomSimulation10(ciw.Simulation):
+    def __init__(self, network):
+        super().__init__(network=network, arrival_node_class=CustomArrival, tracker=ciw.trackers.NodePopulation(), individual_class=CustomIndividual,  node_class=[ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, CustomNode10, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node])
+    def simulate_until_decision(self, max_simulation_time):
+        next_active_node = self.find_next_active_node()
+        self.current_time = next_active_node.next_event_date
+        while self.current_time < max_simulation_time:
+            next_active_node = self.event_and_return_nextnode(next_active_node)
+            self.statetracker.timestamp()
+            self.current_time = next_active_node.next_event_date
+            if next_active_node == self.nodes[11]: #CGD
                 break
         return self.current_time
 
@@ -40,6 +52,30 @@ class CustomNode(ciw.Node):
             return self.simulation.nodes[10]
         elif self.decision == 3: #service2
             return self.simulation.nodes[12]
+        
+
+class CustomNode10(ciw.Node):
+    #12-13-15-17-19-21
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.decision = 0
+        self.number_of_serviced_individuals = 0
+        self.stop = 0
+    def next_node(self, ind):
+        self.number_of_serviced_individuals += 1
+        self.stop = 1
+        if self.decision == 0: #rsu
+            return self.simulation.nodes[12]
+        elif self.decision == 1: #cloud
+            return self.simulation.nodes[13]
+        elif self.decision == 2: #service1
+            return self.simulation.nodes[15]
+        elif self.decision == 3: #service2
+            return self.simulation.nodes[17]
+        elif self.decision == 4: #service3
+            return self.simulation.nodes[19]
+        elif self.decision == 5: #service4
+            return self.simulation.nodes[21]
 
 
 class CustomIndividual(object):
@@ -90,7 +126,8 @@ class CustomArrival(ciw.ArrivalNode):
             priority_class = self.simulation.network.priority_class_mapping[self.next_class]
             next_individual = self.simulation.IndividualType(
                 self.number_of_individuals,
-                random.choice([103700,84060,46900,61800,191800,546000,80600,118900,26900,128700,346400])/10, #cu
+                #random.choice([103700,84060,46900,61800,191800,546000,80600,118900,26900,128700,346400])/50, #cu
+                random.choice([18200,75600,69300,41400,1100,16800,30000,44000,30100,43700,56400,91900,33000,28900,26300,520400,116000])/50, #cu
                 random.randint(5,30), #sz
                 random.random(), #dl
                 self.next_class,

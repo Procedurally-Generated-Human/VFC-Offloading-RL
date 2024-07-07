@@ -4,7 +4,7 @@ import ciw
 import numpy as np
 import matplotlib.pyplot as plt 
 from movement import create_random_walk, create_parked_coords
-from custom_components import MovingTransmissionDistNew, ComputationDist, StationaryTransmissionDistNew, CustomSimulation, CustomNode, CustomArrival, CustomIndividual
+from custom_components import MovingTransmissionDistNew, ComputationDist, StationaryTransmissionDistNew, CustomSimulation
 from animate import Animator
 from helpers import generate_service_cpu, generate_rsu_hardware, generate_cloud_hardware
 np.set_printoptions(suppress=True)
@@ -29,9 +29,9 @@ class VFCOffloadingEnv(gym.Env):
         walk_5 = create_random_walk(self.n_timesteps)
         self.parked_1 = create_parked_coords()
         self.parked_2 = create_parked_coords()
-        self.service_vehicles_cpu = generate_service_cpu(2,3500,4000)
-        self.rsu_hardware = generate_rsu_hardware(4500,4500)
-        self.cloud_hardware = generate_cloud_hardware(1000,1000,6000,6000)
+        self.service_vehicles_cpu = generate_service_cpu(2)
+        self.rsu_hardware = generate_rsu_hardware()
+        self.cloud_hardware = generate_cloud_hardware()
         if self.render_mode == "human":
             self.anim = Animator([walk_1,walk_2,walk_3,walk_4,walk_5],[self.parked_1,self.parked_2], self.service_vehicles_cpu, self.rsu_hardware, self.cloud_hardware)
         self.N = ciw.create_network(
@@ -88,7 +88,6 @@ class VFCOffloadingEnv(gym.Env):
         service_1_cpu_queue = sum(tuple(x.cu for x in self.Q.nodes[11].all_individuals))
         service_2_trans_queue = sum(tuple(x.sz for x in self.Q.nodes[12].all_individuals))
         service_2_cpu_queue = sum(tuple(x.cu for x in self.Q.nodes[13].all_individuals))
-
         obs_service_distance = np.array([np.linalg.norm((self.parked_1[0],self.parked_1[1]) - np.array([500,500])), np.linalg.norm((self.parked_2[0],self.parked_2[1]) - np.array([500,500]))])/707
         obs_queues_cpu = np.array([rsu_cpu_queue, cloud_cpu_queue, service_1_cpu_queue, service_2_cpu_queue], dtype=np.float32)/1000000
         obs_queues_trans = np.array([cloud_trans_queue, service_1_trans_queue, service_2_trans_queue], dtype=np.float32)/100
@@ -126,7 +125,6 @@ class VFCOffloadingEnv(gym.Env):
             service_1_cpu_queue = sum(tuple(x.cu for x in self.Q.nodes[11].all_individuals))
             service_2_trans_queue = sum(tuple(x.sz for x in self.Q.nodes[12].all_individuals))
             service_2_cpu_queue = sum(tuple(x.cu for x in self.Q.nodes[13].all_individuals))
-
             obs_service_distance = np.array([np.linalg.norm((self.parked_1[0],self.parked_1[1]) - np.array([500,500])), np.linalg.norm((self.parked_2[0],self.parked_2[1]) - np.array([500,500]))])/707
             obs_queues_cpu = np.array([rsu_cpu_queue,cloud_cpu_queue,service_1_cpu_queue,service_2_cpu_queue], dtype=np.float32)/1000000
             obs_queues_trans = np.array([cloud_trans_queue,service_1_trans_queue,service_2_trans_queue], dtype=np.float32)/100
@@ -145,70 +143,79 @@ class VFCOffloadingEnv(gym.Env):
         return obs, rew, ter, tur, info
 
 
+# RL
 from stable_baselines3 import PPO
 from helpers import shortest_queue
+number_of_trials = 100
 train_env = VFCOffloadingEnv(100)
-model = PPO("MlpPolicy", train_env, verbose=1).learn(400000)
-model.save("400000ppo")
+model = PPO("MlpPolicy", train_env, verbose=1).learn(200000)
+#model.save("400000ppo")
 #model = PPO("MlpPolicy", train_env, verbose=1).load("400000ppo")
-com_rew = 0
-for i in range(1):
-    print(i)
-    env = VFCOffloadingEnv(100, render_mode=None)
-    obs,_ = env.reset()
-    ter = False
-    tot_rew = 0
-    action_store = []
-    while not ter:
-            #action = 1
-            #action = env.action_space.sample()
-            #print("Current State:", obs)
-            action = model.predict(obs, deterministic=True)[0]
-            #action = shortest_queue(obs)
-            action_store.append(action)
-            #print("Action Taken:", action)
-            obs,rew,ter,_,_ = env.step(action)
-            tot_rew += rew
-            #print("Next State:", obs)
-            #print("Reward:",rew)
-            #print("Terminated:",ter)
-            #print("-----------------------------")
-    com_rew += tot_rew
-print(com_rew/1)
-print(action_store)
-ts = [ts[0] for ts in env.Q.statetracker.history]
-n1 = [ts[1][0] for ts in env.Q.statetracker.history]
-n2 = [ts[1][1] for ts in env.Q.statetracker.history]
-n3 = [ts[1][2] for ts in env.Q.statetracker.history]
-n4 = [ts[1][3] for ts in env.Q.statetracker.history]
-n5 = [ts[1][4] for ts in env.Q.statetracker.history]
-n6 = [ts[1][5] for ts in env.Q.statetracker.history]
-n7 = [ts[1][6] for ts in env.Q.statetracker.history]
-n8 = [ts[1][7] for ts in env.Q.statetracker.history]
-n9 = [ts[1][8] for ts in env.Q.statetracker.history]
-n10 = [ts[1][9] for ts in env.Q.statetracker.history]
-n11 = [ts[1][10] for ts in env.Q.statetracker.history]
-n12 = [ts[1][11] for ts in env.Q.statetracker.history]
-n13 = [ts[1][12] for ts in env.Q.statetracker.history]
-import matplotlib.pyplot as plt 
 
-plt.title("Client Vehicles")
-plt.plot(ts, n1, label="client-1"); 
-plt.plot(ts, n2, label="client-2"); 
-plt.plot(ts, n3, label="client-3"); 
-plt.plot(ts, n4, label="client-4"); 
-plt.plot(ts, n5, label="client-5"); 
+
+def test_offloading_method(n, method_name):
+    average_rew_rl = 0
+    for i in range(n):
+        env = VFCOffloadingEnv(100, render_mode=None)
+        obs,_ = env.reset()
+        ter = False
+        tot_rew = 0
+        action_store = []
+        while not ter:
+                if method_name == "RL":
+                    action = model.predict(obs, deterministic=True)[0]
+                elif method_name == "Greedy":
+                    action = shortest_queue(obs)
+                elif method_name == "RSU":
+                    action = 0
+                elif method_name == "Cloud":
+                    action = 1
+                elif method_name == "Random":
+                    action = env.action_space.sample()
+                else:
+                    print("INVALID METHOD")
+                action_store.append(action)
+                obs,rew,ter,_,_ = env.step(action)
+                tot_rew += rew
+        average_rew_rl += tot_rew
+        finished_tasks = env.Q.nodes[-1].all_individuals
+        finished_tasks_details = [r.data_records for r in finished_tasks]
+        delay = []
+        for task in finished_tasks_details:
+            delay.append(task[-1].exit_date - task[0].arrival_date)
+        print(sum(delay)/len(delay))
+        print(method_name, "Average Reward:",average_rew_rl/number_of_trials)
+        print(method_name, "Average Task Delay:",sum(delay)/len(delay))
+        ts = [ts[0] for ts in env.Q.statetracker.history]
+        n7 = [ts[1][6] for ts in env.Q.statetracker.history]
+        n8 = [ts[1][7] for ts in env.Q.statetracker.history]
+        n9 = [ts[1][8] for ts in env.Q.statetracker.history]
+        n10 =[ts[1][9] for ts in env.Q.statetracker.history]
+        n11 =[ts[1][10] for ts in env.Q.statetracker.history]
+        n12 =[ts[1][11] for ts in env.Q.statetracker.history]
+        n13 =[ts[1][12] for ts in env.Q.statetracker.history]
+        return ts, (np.array(n7)+np.array(n9)+np.array(n11)+np.array(n13))/4, (np.array(n8)+np.array(n10)+np.array(n12))/3
+
+ts_rl, rl_cpu_queue_length, rl_trans_queue_length = test_offloading_method(100, "RL")
+ts_rnd, rnd_cpu_queue_length, rnd_trans_queue_length = test_offloading_method(100, "Random")
+ts_cld, cld_cpu_queue_length, cld_trans_queue_length = test_offloading_method(100, "Cloud")
+ts_rsu, rsu_cpu_queue_length, rsu_trans_queue_length = test_offloading_method(100, "RSU")
+ts_grd, grd_cpu_queue_length, grd_trans_queue_length = test_offloading_method(100, "Greedy")
+
+plt.title("Average Processing Queue Length")
+plt.plot(ts_rl, rl_cpu_queue_length, label="AVG-CPU-RL", linewidth=1)
+plt.plot(ts_rnd, rnd_cpu_queue_length, label="AVG-CPU-RND", linewidth=1)
+plt.plot(ts_cld, cld_cpu_queue_length, label="AVG-CPU-CLD", linewidth=1)
+plt.plot(ts_rsu, rsu_cpu_queue_length, label="AVG-CPU-RSU", linewidth=1)
+plt.plot(ts_grd, grd_cpu_queue_length, label="AVG-CPU-GRD", linewidth=1)
 plt.legend(loc="upper left")
 plt.show()
 
-plt.title("RSU")
-plt.plot(ts, n6, label="rsu-decision");
-plt.plot(ts, n7, label="rsu-cpu");
-plt.plot(ts, n8, label="rsu-trns-cloud");
-plt.plot(ts, n9, label="cloud-cpu");
-plt.plot(ts, n10, label="rsu-trns-service-1");
-plt.plot(ts, n11, label="service-1-cpu");
-plt.plot(ts, n12, label="rsu-trns-service-2");
-plt.plot(ts, n13, label="service-2-cpu");
+plt.title("Average Transmission Queue Length")
+plt.plot(ts_rl, rl_trans_queue_length, label="AVG-TRANS-RL", linewidth=1)
+plt.plot(ts_rnd, rnd_trans_queue_length, label="AVG-TRANS-RND", linewidth=1)
+plt.plot(ts_cld, cld_trans_queue_length, label="AVG-TRANS-CLD", linewidth=1)
+plt.plot(ts_rsu, rsu_trans_queue_length, label="AVG-TRANS-RSU", linewidth=1)
+plt.plot(ts_grd, grd_trans_queue_length, label="AVG-TRANS-GRD", linewidth=1)
 plt.legend(loc="upper left")
 plt.show()

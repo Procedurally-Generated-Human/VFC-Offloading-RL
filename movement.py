@@ -1,9 +1,5 @@
 import numpy as np
 import random
-#import matplotlib.pyplot as plt
-#import matplotlib.ticker as ticker
-#from celluloid import Camera
-#from matplotlib.patches import Rectangle
 
 
 def create_parked_coords():
@@ -37,9 +33,6 @@ def create_parked_coords():
         return (x_max - rand_num + width + height, y_max)
     else:
         return (x_min, y_max - rand_num + 2 * width + height)
-
-
-
 
 
 def create_random_walk(timesteps):
@@ -77,5 +70,3 @@ def create_random_walk(timesteps):
         coords[t][0] = x
         coords[t][1] = y
     return coords
-
-
