@@ -32,6 +32,21 @@ class CustomSimulation10(ciw.Simulation):
             if next_active_node == self.nodes[11]: #CGD
                 break
         return self.current_time
+    
+
+class CustomSimulation20(ciw.Simulation):
+    def __init__(self, network):
+        super().__init__(network=network, arrival_node_class=CustomArrival, tracker=ciw.trackers.NodePopulation(), individual_class=CustomIndividual,  node_class=[ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, CustomNode20, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node, ciw.Node])
+    def simulate_until_decision(self, max_simulation_time):
+        next_active_node = self.find_next_active_node()
+        self.current_time = next_active_node.next_event_date
+        while self.current_time < max_simulation_time:
+            next_active_node = self.event_and_return_nextnode(next_active_node)
+            self.statetracker.timestamp()
+            self.current_time = next_active_node.next_event_date
+            if next_active_node == self.nodes[21]: #CGD
+                break
+        return self.current_time
 
 
 class CustomNode(ciw.Node):
@@ -76,6 +91,38 @@ class CustomNode10(ciw.Node):
             return self.simulation.nodes[19]
         elif self.decision == 5: #service4
             return self.simulation.nodes[21]
+        
+
+class CustomNode20(ciw.Node):
+    #22-23-25-27-29-31-33-35-37-39
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.decision = 0
+        self.number_of_serviced_individuals = 0
+        self.stop = 0
+    def next_node(self, ind):
+        self.number_of_serviced_individuals += 1
+        self.stop = 1
+        if self.decision == 0: #rsu
+            return self.simulation.nodes[22]
+        elif self.decision == 1: #cloud
+            return self.simulation.nodes[23]
+        elif self.decision == 2: #service1
+            return self.simulation.nodes[25]
+        elif self.decision == 3: #service2
+            return self.simulation.nodes[27]
+        elif self.decision == 4: #service3
+            return self.simulation.nodes[29]
+        elif self.decision == 5: #service4
+            return self.simulation.nodes[31]
+        elif self.decision == 6: #service5
+            return self.simulation.nodes[33]
+        elif self.decision == 7: #service6
+            return self.simulation.nodes[35]
+        elif self.decision == 8: #service7
+            return self.simulation.nodes[37]
+        elif self.decision == 9: #service8
+            return self.simulation.nodes[39]
 
 
 class CustomIndividual(object):
@@ -126,9 +173,8 @@ class CustomArrival(ciw.ArrivalNode):
             priority_class = self.simulation.network.priority_class_mapping[self.next_class]
             next_individual = self.simulation.IndividualType(
                 self.number_of_individuals,
-                #random.choice([103700,84060,46900,61800,191800,546000,80600,118900,26900,128700,346400])/50, #cu
-                random.choice([18200,75600,69300,41400,1100,16800,30000,44000,30100,43700,56400,91900,33000,28900,26300,520400,116000])/50, #cu
-                random.randint(5,30), #sz
+                random.choice([18200,75600,69300,41400,1100,16800,30000,44000,30100,43700,56400,91900,33000,28900,26300,520400,116000])/40, #cu
+                random.randint(20,40), #sz
                 random.random(), #dl
                 self.next_class,
                 priority_class,
@@ -152,14 +198,31 @@ class ComputationDist(ciw.dists.Distribution):
         return ind.cu/self.mips
 
 
+class CloudCompDelay(ciw.dists.Distribution):
+    def __init__(self, mips, min, max):
+        self.mips = mips
+        self.min = min
+        self.max = max
+    def sample(self, t=None, ind=None):
+        return ind.cu/self.mips + np.random.uniform(self.min,self.max)
+
+
+class CloudTransDelay(ciw.dists.Distribution):
+    def __init__(self, bw):
+        self.bw = bw
+    def sample(self, t=None, ind=None):
+        return ind.sz/self.bw
+
+
 class StationaryTransmissionDistNew(ciw.dists.Distribution):
     def __init__(self, x, y):
         self.x = x
         self.y = y
     def sample(self, t=None, ind=None):
         distance = np.linalg.norm((self.x,self.y) - np.array([500,500]))
-        r_div_t = 2*2.15 - 32.44 - 20*math.log10(distance*0.001) - 20*math.log10(5900)
-        r = 10*(10**6)*math.log2(1+((0.2*(10**(r_div_t/10)))/(2*(10**6)*(10**(-17.4)))))
+        r_div_t = 2*5 - 32.44 - 20*math.log10(distance*0.001) - 20*math.log10(5900)
+        #r = 10*(10**6)*math.log2(1+((0.2*(10**(r_div_t/10)))/(2*(10**6)*(10**(-17.4)))))
+        r = 40*(10**6)*math.log2(1+((1*(10**(r_div_t/10)))/(40*(10**6)*(10**(-17.4)))))
         return (ind.sz/(r/1_000_000))
     
     
@@ -168,19 +231,12 @@ class MovingTransmissionDistNew(ciw.dists.Distribution):
         self.coords = coords
     def sample(self, t=None, ind=None):
         distance = np.linalg.norm(self.coords[math.trunc(t)] - np.array([500,500]))
-        r_div_t = 2*2.15 - 32.44 - 20*math.log10(distance*0.001) - 20*math.log10(5900)
-        r = 10*(10**6)*math.log2(1+((0.2*(10**(r_div_t/10)))/(2*(10**6)*(10**(-17.4)))))
+        r_div_t = 2*5 - 32.44 - 20*math.log10(distance*0.001) - 20*math.log10(5900)
+        #r = 10*(10**6)*math.log2(1+((0.2*(10**(r_div_t/10)))/(2*(10**6)*(10**(-17.4)))))
+        r = 40*(10**6)*math.log2(1+((1*(10**(r_div_t/10)))/(40*(10**6)*(10**(-17.4)))))
         return (ind.sz/(r/1_000_000))
 
 def final(x):
-    r_div_t = 2*2.15 - 32.44 - 20*math.log10(x*0.001) - 20*math.log10(5900)
-    r = 10*(10**6)*math.log2(1+((0.2*(10**(r_div_t/10)))/(2*(10**6)*(10**(-17.4)))))
+    r_div_t = 2*4 - 32.44 - 20*math.log10(x*0.001) - 20*math.log10(5900)
+    r = 40*(10**6)*math.log2(1+((1*(10**(r_div_t/10)))/(40*(10**6)*(10**(-17.4)))))
     return r/1_000_000
-
-
-# import matplotlib.pyplot as plt
-# a = []
-# for i in range(10,1000):
-#     a.append(final(i))
-# plt.scatter([i for i in range(10,1000)],a)
-# plt.show()

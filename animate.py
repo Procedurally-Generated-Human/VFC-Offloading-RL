@@ -63,6 +63,14 @@ class Animator(object):
             plt.plot([self.parked[2][0],RSU_IMAGE_POSITION[0]], [self.parked[2][1],RSU_IMAGE_POSITION[1]], marker='', color='pink')
         elif action == 5:
             plt.plot([self.parked[3][0],RSU_IMAGE_POSITION[0]], [self.parked[3][1],RSU_IMAGE_POSITION[1]], marker='', color='pink')
+        elif action == 6:
+            plt.plot([self.parked[4][0],RSU_IMAGE_POSITION[0]], [self.parked[4][1],RSU_IMAGE_POSITION[1]], marker='', color='pink')
+        elif action == 7:
+            plt.plot([self.parked[5][0],RSU_IMAGE_POSITION[0]], [self.parked[5][1],RSU_IMAGE_POSITION[1]], marker='', color='pink')
+        elif action == 8:
+            plt.plot([self.parked[6][0],RSU_IMAGE_POSITION[0]], [self.parked[6][1],RSU_IMAGE_POSITION[1]], marker='', color='pink')
+        elif action == 9:
+            plt.plot([self.parked[7][0],RSU_IMAGE_POSITION[0]], [self.parked[7][1],RSU_IMAGE_POSITION[1]], marker='', color='pink')
         # place simulation details text
         props = dict(boxstyle='round', facecolor='grey', alpha=0.15)
         details = "-- Simulation Details --"+"\nTime: "+str(round(t,5))+"\nOrigin: "+str(emitted_node)+"\nAction: "+str(action)+"\nRSU Cpu: "+str(self.rsu_hardware[0])+"\nCloud BW: "+str(self.cloud_hardware[0])+"\nCloud CPU: "+str(self.cloud_hardware[1])+"\nTrans Queues: "+str(obs[0])+"\nCPU Queues: "+str(obs[1])+"\nTask CU: "+str(obs[2])+"\nTask SZ: "+str(obs[3])

@@ -4,7 +4,7 @@ import ciw
 import numpy as np
 import matplotlib.pyplot as plt 
 from movement import create_random_walk, create_parked_coords
-from custom_components import MovingTransmissionDistNew, ComputationDist, StationaryTransmissionDistNew, CustomSimulation20 #CNG
+from custom_components import MovingTransmissionDistNew, ComputationDist, StationaryTransmissionDistNew, CustomSimulation20, CloudCompDelay, CloudTransDelay #CNG
 from animate import Animator
 from helpers import generate_service_cpu, generate_rsu_hardware, generate_cloud_hardware
 np.set_printoptions(suppress=True)
@@ -56,26 +56,26 @@ class VFCOffloadingEnv20(gym.Env):
         if self.render_mode == "human":
             self.anim = Animator([walk_1,walk_2,walk_3,walk_4,walk_5,walk_6,walk_7,walk_8,walk_9,walk_10,walk_11,walk_12,walk_13,walk_14,walk_15,walk_16,walk_17,walk_18,walk_19,walk_20],[self.parked_1,self.parked_2,self.parked_3,self.parked_4,self.parked_5,self.parked_6,self.parked_7,self.parked_8], self.service_vehicles_cpu, self.rsu_hardware, self.cloud_hardware) #CNG
         self.N = ciw.create_network(
-            arrival_distributions=[ciw.dists.Exponential(rate=1),   #client-trns-1       1
-                           ciw.dists.Exponential(rate=1),           #client-trns-2       2
-                           ciw.dists.Exponential(rate=1),           #client-trns-3       3
-                           ciw.dists.Exponential(rate=1),           #client-trns-4       4
-                           ciw.dists.Exponential(rate=1),           #client-trns-5       5
-                           ciw.dists.Exponential(rate=1),           #client-trns-6       6 
-                           ciw.dists.Exponential(rate=1),           #client-trns-7       7
-                           ciw.dists.Exponential(rate=1),           #client-trns-8       8
-                           ciw.dists.Exponential(rate=1),           #client-trns-9       9
-                           ciw.dists.Exponential(rate=1),           #client-trns-10     10
-                           ciw.dists.Exponential(rate=1),           #client-trns-11     11
-                           ciw.dists.Exponential(rate=1),           #client-trns-12     12
-                           ciw.dists.Exponential(rate=1),           #client-trns-13     13
-                           ciw.dists.Exponential(rate=1),           #client-trns-14     14
-                           ciw.dists.Exponential(rate=1),           #client-trns-15     15
-                           ciw.dists.Exponential(rate=1),           #client-trns-16     16 
-                           ciw.dists.Exponential(rate=1),           #client-trns-17     17
-                           ciw.dists.Exponential(rate=1),           #client-trns-18     18
-                           ciw.dists.Exponential(rate=1),           #client-trns-19     19
-                           ciw.dists.Exponential(rate=1),           #client-trns-20     20
+            arrival_distributions=[ciw.dists.Exponential(rate=3),   #client-trns-1       1
+                           ciw.dists.Exponential(rate=3),           #client-trns-2       2
+                           ciw.dists.Exponential(rate=3),           #client-trns-3       3
+                           ciw.dists.Exponential(rate=3),           #client-trns-4       4
+                           ciw.dists.Exponential(rate=3),           #client-trns-5       5
+                           ciw.dists.Exponential(rate=3),           #client-trns-6       6 
+                           ciw.dists.Exponential(rate=3),           #client-trns-7       7
+                           ciw.dists.Exponential(rate=3),           #client-trns-8       8
+                           ciw.dists.Exponential(rate=3),           #client-trns-9       9
+                           ciw.dists.Exponential(rate=3),           #client-trns-10     10
+                           ciw.dists.Exponential(rate=3),           #client-trns-11     11
+                           ciw.dists.Exponential(rate=3),           #client-trns-12     12
+                           ciw.dists.Exponential(rate=3),           #client-trns-13     13
+                           ciw.dists.Exponential(rate=3),           #client-trns-14     14
+                           ciw.dists.Exponential(rate=3),           #client-trns-15     15
+                           ciw.dists.Exponential(rate=3),           #client-trns-16     16 
+                           ciw.dists.Exponential(rate=3),           #client-trns-17     17
+                           ciw.dists.Exponential(rate=3),           #client-trns-18     18
+                           ciw.dists.Exponential(rate=3),           #client-trns-19     19
+                           ciw.dists.Exponential(rate=3),           #client-trns-20     20
                            None,                                    #rsu-trns           21
                            None,                                    #rsu-cpu            22
                            None,                                    #trns-to-cloud      23
@@ -119,8 +119,8 @@ class VFCOffloadingEnv20(gym.Env):
                            MovingTransmissionDistNew(coords=walk_20),       #client-trns-20     20
                            ciw.dists.Deterministic(value=0.0000001),        #rsu-trns           21
                            ComputationDist(mips=self.rsu_hardware[0]),      #rsu-cpu            22
-                           ciw.dists.Normal(mean=0.5, sd=1),                #trns-to-cloud      23
-                           ComputationDist(mips=self.cloud_hardware[1]),    #cloud-cpu          24
+                           CloudTransDelay(bw=1000),                        #trns-to-cloud      23
+                           CloudCompDelay(self.cloud_hardware[1],0.05,0.2), #cloud-cpu          24
                            StationaryTransmissionDistNew(x=self.parked_1[0],y=self.parked_1[1]),      #trns-to-service-1    25
                            ComputationDist(mips=self.service_vehicles_cpu[0]),                        #service-cpu-1        26
                            StationaryTransmissionDistNew(x=self.parked_2[0],y=self.parked_2[1]),      #trns-to-service-2    27
@@ -181,7 +181,7 @@ class VFCOffloadingEnv20(gym.Env):
                 list(np.float_([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1])), #39
                 list(np.float_([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0])), #40
                ],
-            number_of_servers= [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,100,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] #CNG
+            number_of_servers= [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,float("Inf"),1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] #CNG
             )
         self.Q = CustomSimulation20(self.N) #CNG
         self.Q.simulate_until_decision(self.n_timesteps)
@@ -207,9 +207,9 @@ class VFCOffloadingEnv20(gym.Env):
         obs_service_distance = np.array([np.linalg.norm((self.parked_1[0],self.parked_1[1]) - np.array([500,500])), np.linalg.norm((self.parked_2[0],self.parked_2[1]) - np.array([500,500])), np.linalg.norm((self.parked_3[0],self.parked_3[1]) - np.array([500,500])), np.linalg.norm((self.parked_4[0],self.parked_4[1]) - np.array([500,500])), np.linalg.norm((self.parked_5[0],self.parked_5[1]) - np.array([500,500])),np.linalg.norm((self.parked_6[0],self.parked_6[1]) - np.array([500,500])), np.linalg.norm((self.parked_7[0],self.parked_7[1]) - np.array([500,500])), np.linalg.norm((self.parked_8[0],self.parked_8[1]) - np.array([500,500]))])/707 #CNG
         obs_queues_cpu = np.array([rsu_cpu_queue, cloud_cpu_queue, service_1_cpu_queue, service_2_cpu_queue, service_3_cpu_queue, service_4_cpu_queue, service_5_cpu_queue, service_6_cpu_queue, service_7_cpu_queue, service_8_cpu_queue], dtype=np.float32)/1000000 #CNG
         obs_queues_trans = np.array([cloud_trans_queue, service_1_trans_queue, service_2_trans_queue, service_3_trans_queue, service_4_trans_queue, service_5_trans_queue, service_6_trans_queue, service_7_trans_queue, service_8_trans_queue], dtype=np.float32)/100 #CNG
-        obs_task_cu = (np.array([self.Q.nodes[21].all_individuals[0].cu])-2690)/(54600-2690) #CGD
-        obs_task_sz = (np.array([self.Q.nodes[21].all_individuals[0].sz])-5)/(30-5) #CGD
-        obs_cpu = (np.concatenate(([self.cloud_hardware[1]],[self.rsu_hardware[0]],self.service_vehicles_cpu))-10250)/(71120-10250) 
+        obs_task_cu = (np.array([self.Q.nodes[21].all_individuals[0].cu])-27.5)/(13010-27.5) #CGD
+        obs_task_sz = (np.array([self.Q.nodes[21].all_individuals[0].sz])-10)/(30-10) #CGD
+        obs_cpu = (np.concatenate(([self.cloud_hardware[1]],[self.rsu_hardware[0]],self.service_vehicles_cpu))-18375)/(71120-18375) 
         obs = np.concatenate((obs_queues_trans, obs_queues_cpu, obs_service_distance, obs_task_cu, obs_task_sz, obs_cpu),dtype=np.float32)
         info = {}
         self.calculated_inds = []
@@ -226,9 +226,10 @@ class VFCOffloadingEnv20(gym.Env):
                 arrival_date = ind_recs[0].arrival_date
                 exit_date = ind_recs[-1].exit_date
                 total_delay = exit_date - arrival_date
-                rew += 1/total_delay
+                #rew += 1/total_delay
+                rew += 5 - total_delay
                 self.calculated_inds.append(ind)
-                info = {}
+        info = {}
         ter = False
         tur = False
         if self.Q.current_time >= self.n_timesteps:
@@ -256,9 +257,9 @@ class VFCOffloadingEnv20(gym.Env):
             obs_service_distance = np.array([np.linalg.norm((self.parked_1[0],self.parked_1[1]) - np.array([500,500])), np.linalg.norm((self.parked_2[0],self.parked_2[1]) - np.array([500,500])), np.linalg.norm((self.parked_3[0],self.parked_3[1]) - np.array([500,500])), np.linalg.norm((self.parked_4[0],self.parked_4[1]) - np.array([500,500])), np.linalg.norm((self.parked_5[0],self.parked_5[1]) - np.array([500,500])),np.linalg.norm((self.parked_6[0],self.parked_6[1]) - np.array([500,500])), np.linalg.norm((self.parked_7[0],self.parked_7[1]) - np.array([500,500])), np.linalg.norm((self.parked_8[0],self.parked_8[1]) - np.array([500,500]))])/707 #CNG
             obs_queues_cpu = np.array([rsu_cpu_queue, cloud_cpu_queue, service_1_cpu_queue, service_2_cpu_queue, service_3_cpu_queue, service_4_cpu_queue, service_5_cpu_queue, service_6_cpu_queue, service_7_cpu_queue, service_8_cpu_queue], dtype=np.float32)/1000000 #CNG
             obs_queues_trans = np.array([cloud_trans_queue, service_1_trans_queue, service_2_trans_queue, service_3_trans_queue, service_4_trans_queue, service_5_trans_queue, service_6_trans_queue, service_7_trans_queue, service_8_trans_queue], dtype=np.float32)/100 #CNG
-            obs_task_cu = (np.array([self.Q.nodes[21].all_individuals[0].cu])-2690)/(54600-2690) #CGD
-            obs_task_sz = (np.array([self.Q.nodes[21].all_individuals[0].sz])-5)/(30-5) #CGD
-            obs_cpu = (np.concatenate(([self.cloud_hardware[1]],[self.rsu_hardware[0]],self.service_vehicles_cpu))-10250)/(71120-10250) 
+            obs_task_cu = (np.array([self.Q.nodes[21].all_individuals[0].cu])-27.5)/(13010-27.5) #CGD
+            obs_task_sz = (np.array([self.Q.nodes[21].all_individuals[0].sz])-10)/(30-10) #CGD
+            obs_cpu = (np.concatenate(([self.cloud_hardware[1]],[self.rsu_hardware[0]],self.service_vehicles_cpu))-18375)/(71120-18375) 
             obs = np.concatenate((obs_queues_trans, obs_queues_cpu, obs_service_distance, obs_task_cu, obs_task_sz, obs_cpu),dtype=np.float32)
         else:
             obs = np.zeros((39))
@@ -272,89 +273,87 @@ class VFCOffloadingEnv20(gym.Env):
 
 
 from stable_baselines3 import PPO
-number_of_trials = 100
-train_env = VFCOffloadingEnv20(100)
-model = PPO("MlpPolicy", train_env, verbose=1).learn(400000)
-#model.save("400000ppo")
-#model = PPO("MlpPolicy", train_env, verbose=1).load("400000ppo")
-
+from helpers import shortest_queue20
+train_env = VFCOffloadingEnv20(60)
+#model = PPO("MlpPolicy", train_env, verbose=1, gamma=0.85).learn(300000)
+#model.save("env20-300000")
+model = PPO("MlpPolicy", train_env, verbose=1).load("env20-300000")
 
 
 def test_offloading_method(n, method_name):
-    average_rew_rl = 0
+    total_rew = 0
+    total_delay = 0
+    total_num_tasks = 0
+    test_delays = []
     for i in range(n):
-        env = VFCOffloadingEnv20(100, render_mode=None)
+        print(i)
+        env = VFCOffloadingEnv20(60, render_mode=None)
         obs,_ = env.reset()
         ter = False
         tot_rew = 0
-        action_store = []
+        #zorder = 0
+        #action_store = []
         while not ter:
                 if method_name == "RL":
-                    action = model.predict(obs, deterministic=True)[0]
+                    # color = "blue"
+                    # zorder = 10
+                    action = model.predict(obs)[0]
+                    #action_store.append(action)
                 elif method_name == "Greedy":
-                    action = 2 #CHANGE THIS
+                    # color = "green"
+                    action = shortest_queue20(obs)
                 elif method_name == "RSU":
+                    # color = "black"
                     action = 0
                 elif method_name == "Cloud":
+                    # color = "black"
                     action = 1
                 elif method_name == "Random":
+                    # color = "red"
                     action = env.action_space.sample()
                 else:
                     print("INVALID METHOD")
-                action_store.append(action)
                 obs,rew,ter,_,_ = env.step(action)
                 tot_rew += rew
-        average_rew_rl += tot_rew
+        #print(action_store)
+        total_rew += tot_rew
         finished_tasks = env.Q.nodes[-1].all_individuals
         finished_tasks_details = [r.data_records for r in finished_tasks]
         delay = []
         for task in finished_tasks_details:
             delay.append(task[-1].exit_date - task[0].arrival_date)
-        print(sum(delay)/len(delay))
-        print(method_name, "Average Reward:",average_rew_rl/number_of_trials)
-        print(method_name, "Average Task Delay:",sum(delay)/len(delay))
-        ts = [ts[0] for ts in env.Q.statetracker.history]
-        rsu_cpu = [ts[1][21] for ts in env.Q.statetracker.history]
-        cld_trns = [ts[1][22] for ts in env.Q.statetracker.history]
-        cld_cpu = [ts[1][23] for ts in env.Q.statetracker.history]
-        s1_trns = [ts[1][24] for ts in env.Q.statetracker.history]
-        s1_cpu =[ts[1][25] for ts in env.Q.statetracker.history]
-        s2_trns =[ts[1][26] for ts in env.Q.statetracker.history]
-        s2_cpu =[ts[1][27] for ts in env.Q.statetracker.history]
-        s3_trns =[ts[1][28] for ts in env.Q.statetracker.history]
-        s3_cpu =[ts[1][29] for ts in env.Q.statetracker.history]
-        s4_trns =[ts[1][30] for ts in env.Q.statetracker.history]
-        s4_cpu =[ts[1][31] for ts in env.Q.statetracker.history]
-        s5_trns = [ts[1][32] for ts in env.Q.statetracker.history]
-        s5_cpu =[ts[1][33] for ts in env.Q.statetracker.history]
-        s6_trns =[ts[1][34] for ts in env.Q.statetracker.history]
-        s6_cpu =[ts[1][35] for ts in env.Q.statetracker.history]
-        s7_trns =[ts[1][36] for ts in env.Q.statetracker.history]
-        s7_cpu =[ts[1][37] for ts in env.Q.statetracker.history]
-        s8_trns =[ts[1][38] for ts in env.Q.statetracker.history]
-        s8_cpu =[ts[1][39] for ts in env.Q.statetracker.history]
-        return ts, (np.array(rsu_cpu)+np.array(cld_cpu)+np.array(s1_cpu)+np.array(s2_cpu)+np.array(s3_cpu)+np.array(s4_cpu)+np.array(s5_cpu)+np.array(s6_cpu)+np.array(s7_cpu)+np.array(s8_cpu))/10, (np.array(cld_trns)+np.array(s1_trns)+np.array(s2_trns)+np.array(s3_trns)+np.array(s4_trns)+np.array(s5_trns)+np.array(s6_trns)+np.array(s7_trns)+np.array(s8_trns))/9
+        total_delay += sum(delay)/len(delay)
+        total_num_tasks += len(delay)
+        test_delays.append(sum(delay)/len(delay))
+    print("--------------------------------------")
+    print(method_name, "Average Reward:",total_rew/n)
+    print(method_name, "Average Task Delay:",total_delay/n)
+    print(method_name, "Average #Tasks Completed:",total_num_tasks/n)
+    print(method_name, "Test Delays:", test_delays)
+    with open("out-20-"+method_name+".txt", 'w') as f:
+        for line in test_delays:
+            f.write(f"{line}\n")
+    # ts = [ts[0] for ts in env.Q.statetracker.history]
+    # cld_trns = [ts[1][22] for ts in env.Q.statetracker.history]
+    # s1_trns = [ts[1][24] for ts in env.Q.statetracker.history]
+    # s2_trns =[ts[1][26] for ts in env.Q.statetracker.history]
+    # s3_trns =[ts[1][28] for ts in env.Q.statetracker.history]
+    # s4_trns =[ts[1][30] for ts in env.Q.statetracker.history]
+    # s5_trns = [ts[1][32] for ts in env.Q.statetracker.history]
+    # s6_trns =[ts[1][34] for ts in env.Q.statetracker.history]
+    # s7_trns =[ts[1][36] for ts in env.Q.statetracker.history]
+    # s8_trns =[ts[1][38] for ts in env.Q.statetracker.history]
+    # plt.plot(ts, np.array(cld_trns)+np.array(s1_trns)+np.array(s2_trns)+np.array(s3_trns)+np.array(s4_trns)+np.array(s5_trns)+np.array(s6_trns)+np.array(s7_trns)+np.array(s8_trns), label=method_name, linewidth=3, color=color, zorder=zorder)
 
-ts_rl, rl_cpu_queue_length, rl_trans_queue_length = test_offloading_method(100, "RL")
-ts_rnd, rnd_cpu_queue_length, rnd_trans_queue_length = test_offloading_method(100, "Random")
-ts_cld, cld_cpu_queue_length, cld_trans_queue_length = test_offloading_method(100, "Cloud")
-ts_rsu, rsu_cpu_queue_length, rsu_trans_queue_length = test_offloading_method(100, "RSU")
-ts_grd, grd_cpu_queue_length, grd_trans_queue_length = test_offloading_method(100, "Greedy")
+test_offloading_method(100, "RL")
+test_offloading_method(100, "Greedy")
+test_offloading_method(100, "Random")
+test_offloading_method(100, "Cloud")
+#test_offloading_method(1, "RSU")
 
-plt.title("Average Processing Queue Length")
-plt.plot(ts_rl, rl_cpu_queue_length, label="AVG-CPU-RL", linewidth=1)
-plt.plot(ts_rnd, rnd_cpu_queue_length, label="AVG-CPU-RND", linewidth=1)
-plt.plot(ts_cld, cld_cpu_queue_length, label="AVG-CPU-CLD", linewidth=1)
-plt.plot(ts_rsu, rsu_cpu_queue_length, label="AVG-CPU-RSU", linewidth=1)
-plt.plot(ts_grd, grd_cpu_queue_length, label="AVG-CPU-GRD", linewidth=1)
-plt.legend(loc="upper left")
-plt.show()
 
-plt.title("Average Transmission Queue Length")
-plt.plot(ts_rl, rl_trans_queue_length, label="AVG-TRANS-RL", linewidth=1)
-plt.plot(ts_rnd, rnd_trans_queue_length, label="AVG-TRANS-RND", linewidth=1)
-plt.plot(ts_cld, cld_trans_queue_length, label="AVG-TRANS-CLD", linewidth=1)
-plt.plot(ts_rsu, rsu_trans_queue_length, label="AVG-TRANS-RSU", linewidth=1)
-plt.plot(ts_grd, grd_trans_queue_length, label="AVG-TRANS-GRD", linewidth=1)
-plt.legend(loc="upper left")
-plt.show()
+# plt.legend(loc='best')
+# plt.xlabel("Simulation Timestep (s)")
+# plt.ylabel("Transmisson Queue Length")
+# plt.legend(fontsize="large")
+# plt.show()
