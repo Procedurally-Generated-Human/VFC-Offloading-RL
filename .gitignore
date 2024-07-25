@@ -1,0 +1,28 @@
+### macOS ###
+*.DS_Store
+.AppleDouble
+.LSOverride
+
+### Python ###
+__pycache__/
+env/
+build/
+dist/
+eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# dotenv
+.env
+
+# virtualenv
+.venv
+venv/
+ENV/
