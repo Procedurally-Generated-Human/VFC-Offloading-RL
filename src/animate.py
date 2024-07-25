@@ -11,7 +11,7 @@ RSU_IMAGE_SIZE = 100
 RSU_IMAGE_POSITION = [500,500]
 CLOUD_IMAGE_SIZE = 40
 CLOUD_IMAGE_POSITION = [550,550]
-FRAME_INTERVAL = 1000
+FRAME_INTERVAL = 200
 
 
 class Animator(object):
@@ -23,10 +23,10 @@ class Animator(object):
         self.cloud_hardware = cloud_hardware
         self.fig = plt.figure("Vehicular Fog Computing Simulation")
         self.camera = Camera(self.fig)
-        self.rsu_image_black = plt.imread('rsu-black-transparent.png')
-        self.rsu_image_red = plt.imread('rsu-red-transparent.png')
-        self.cloud_image_black = plt.imread('cloud-black.png')
-        self.cloud_image_red = plt.imread('cloud-red.png')
+        self.rsu_image_black = plt.imread('images/rsu-black-transparent.png')
+        self.rsu_image_red = plt.imread('images/rsu-red-transparent.png')
+        self.cloud_image_black = plt.imread('images/cloud-black.png')
+        self.cloud_image_red = plt.imread('images/cloud-red.png')
         plt.xlim(-10,AREA_SIZE+10)
         plt.ylim(-10,AREA_SIZE+10)
         plt.gca().xaxis.set_major_locator(plt.MultipleLocator(200))
@@ -73,7 +73,7 @@ class Animator(object):
             plt.plot([self.parked[7][0],RSU_IMAGE_POSITION[0]], [self.parked[7][1],RSU_IMAGE_POSITION[1]], marker='', color='pink')
         # place simulation details text
         props = dict(boxstyle='round', facecolor='grey', alpha=0.15)
-        details = "-- Simulation Details --"+"\nTime: "+str(round(t,5))+"\nOrigin: "+str(emitted_node)+"\nAction: "+str(action)+"\nRSU Cpu: "+str(self.rsu_hardware[0])+"\nCloud BW: "+str(self.cloud_hardware[0])+"\nCloud CPU: "+str(self.cloud_hardware[1])+"\nTrans Queues: "+str(obs[0])+"\nCPU Queues: "+str(obs[1])+"\nTask CU: "+str(obs[2])+"\nTask SZ: "+str(obs[3])
+        details = "-- Simulation Details --"+"\nTime: "+str(round(t,5))+"\nOrigin: "+str(emitted_node)+"\nAction: "+str(action)+"\nRSU Cpu: "+str(self.rsu_hardware[0])+"\nCloud CPU: "+str(self.cloud_hardware[1])+"\nTrans Queues: "+str(obs[0])+"\nCPU Queues: "+str(obs[1])+"\nTask CU: "+str(obs[2])+"\nTask SZ: "+str(obs[3])
         plt.text(1050, 1000, details, fontsize=12, verticalalignment='top', bbox=props)
         self.camera.snap()
 

@@ -2,7 +2,6 @@ import ciw.dists
 import gymnasium as gym
 import ciw
 import numpy as np
-import matplotlib.pyplot as plt 
 from movement import create_random_walk, create_parked_coords
 from custom_components import MovingTransmissionDistNew, ComputationDist, StationaryTransmissionDistNew, CustomSimulation, CloudCompDelay, CloudTransDelay
 from animate import Animator
@@ -110,7 +109,6 @@ class VFCOffloadingEnv(gym.Env):
                 arrival_date = ind_recs[0].arrival_date
                 exit_date = ind_recs[-1].exit_date
                 total_delay = exit_date - arrival_date
-                #rew += 1/total_delay
                 rew += 5-total_delay
                 self.calculated_inds.append(ind)
         info = {}
@@ -150,8 +148,8 @@ from helpers import shortest_queue
 number_of_trials = 100
 train_env = VFCOffloadingEnv(60)
 #model = PPO("MlpPolicy", train_env, verbose=1, gamma=0.85).learn(300000)
-#model.save("env5-model")
-model = PPO("MlpPolicy", train_env, verbose=1).load("env5-300000")
+#model.save("trained_models/env5-new")
+model = PPO("MlpPolicy", train_env, verbose=1).load("trained_models/env5-300000")
 
 
 def test_offloading_method(n, method_name):
@@ -164,11 +162,9 @@ def test_offloading_method(n, method_name):
         obs,_ = env.reset()
         ter = False
         tot_rew = 0
-        #action_store = []
         while not ter:
                 if method_name == "RL":
                     action = model.predict(obs, deterministic=True)[0]
-                    #action_store.append(action)
                 elif method_name == "Greedy":
                     action = shortest_queue(obs)
                 elif method_name == "RSU":
@@ -181,7 +177,6 @@ def test_offloading_method(n, method_name):
                     print("INVALID METHOD")
                 obs,rew,ter,_,_ = env.step(action)
                 tot_rew += rew
-        #print(action_store)
         total_rew += tot_rew
         finished_tasks = env.Q.nodes[-1].all_individuals
         finished_tasks_details = [r.data_records for r in finished_tasks]
@@ -196,13 +191,13 @@ def test_offloading_method(n, method_name):
     print(method_name, "Average Task Delay:",total_delay/n)
     print(method_name, "Average #Tasks Completed:",total_num_tasks/n)
     print(method_name, "Test Delays:", test_delays)
-    with open("out-5-"+method_name+".txt", 'w') as f:
+    with open("results/out-5-"+method_name+".txt", 'w') as f:
         for line in test_delays:
             f.write(f"{line}\n")
 
 
-#test_offloading_method(100, "RL")
-#test_offloading_method(100, "Random")
-test_offloading_method(100, "Cloud")
-#test_offloading_method(100, "RSU")
-#test_offloading_method(100, "Greedy")
+test_offloading_method(10, "RL")
+test_offloading_method(10, "Random")
+test_offloading_method(10, "Cloud")
+test_offloading_method(10, "RSU")
+test_offloading_method(10, "Greedy")

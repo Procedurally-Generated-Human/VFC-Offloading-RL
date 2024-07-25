@@ -1,8 +1,7 @@
 import ciw.dists
 import gymnasium as gym
 import ciw
-import numpy as np
-import matplotlib.pyplot as plt 
+import numpy as np 
 from movement import create_random_walk, create_parked_coords
 from custom_components import MovingTransmissionDistNew, ComputationDist, StationaryTransmissionDistNew, CustomSimulation20, CloudCompDelay, CloudTransDelay #CNG
 from animate import Animator
@@ -226,7 +225,6 @@ class VFCOffloadingEnv20(gym.Env):
                 arrival_date = ind_recs[0].arrival_date
                 exit_date = ind_recs[-1].exit_date
                 total_delay = exit_date - arrival_date
-                #rew += 1/total_delay
                 rew += 5 - total_delay
                 self.calculated_inds.append(ind)
         info = {}
@@ -276,8 +274,8 @@ from stable_baselines3 import PPO
 from helpers import shortest_queue20
 train_env = VFCOffloadingEnv20(60)
 #model = PPO("MlpPolicy", train_env, verbose=1, gamma=0.85).learn(300000)
-#model.save("env20-300000")
-model = PPO("MlpPolicy", train_env, verbose=1).load("env20-300000")
+#model.save("trained_models/env20-new")
+model = PPO("MlpPolicy", train_env, verbose=1).load("trained_models/env20-300000")
 
 
 def test_offloading_method(n, method_name):
@@ -292,7 +290,6 @@ def test_offloading_method(n, method_name):
         ter = False
         tot_rew = 0
         #zorder = 0
-        #action_store = []
         while not ter:
                 if method_name == "RL":
                     # color = "blue"
@@ -315,7 +312,6 @@ def test_offloading_method(n, method_name):
                     print("INVALID METHOD")
                 obs,rew,ter,_,_ = env.step(action)
                 tot_rew += rew
-        #print(action_store)
         total_rew += tot_rew
         finished_tasks = env.Q.nodes[-1].all_individuals
         finished_tasks_details = [r.data_records for r in finished_tasks]
@@ -330,7 +326,7 @@ def test_offloading_method(n, method_name):
     print(method_name, "Average Task Delay:",total_delay/n)
     print(method_name, "Average #Tasks Completed:",total_num_tasks/n)
     print(method_name, "Test Delays:", test_delays)
-    with open("out-20-"+method_name+".txt", 'w') as f:
+    with open("results/out-20-"+method_name+".txt", 'w') as f:
         for line in test_delays:
             f.write(f"{line}\n")
     # ts = [ts[0] for ts in env.Q.statetracker.history]
@@ -345,11 +341,11 @@ def test_offloading_method(n, method_name):
     # s8_trns =[ts[1][38] for ts in env.Q.statetracker.history]
     # plt.plot(ts, np.array(cld_trns)+np.array(s1_trns)+np.array(s2_trns)+np.array(s3_trns)+np.array(s4_trns)+np.array(s5_trns)+np.array(s6_trns)+np.array(s7_trns)+np.array(s8_trns), label=method_name, linewidth=3, color=color, zorder=zorder)
 
-test_offloading_method(100, "RL")
-test_offloading_method(100, "Greedy")
-test_offloading_method(100, "Random")
-test_offloading_method(100, "Cloud")
-#test_offloading_method(1, "RSU")
+test_offloading_method(10, "RL")
+test_offloading_method(10, "Greedy")
+test_offloading_method(10, "Random")
+test_offloading_method(10, "Cloud")
+test_offloading_method(10, "RSU")
 
 
 # plt.legend(loc='best')

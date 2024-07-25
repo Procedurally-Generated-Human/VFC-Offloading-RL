@@ -221,7 +221,6 @@ class StationaryTransmissionDistNew(ciw.dists.Distribution):
     def sample(self, t=None, ind=None):
         distance = np.linalg.norm((self.x,self.y) - np.array([500,500]))
         r_div_t = 2*5 - 32.44 - 20*math.log10(distance*0.001) - 20*math.log10(5900)
-        #r = 10*(10**6)*math.log2(1+((0.2*(10**(r_div_t/10)))/(2*(10**6)*(10**(-17.4)))))
         r = 40*(10**6)*math.log2(1+((1*(10**(r_div_t/10)))/(40*(10**6)*(10**(-17.4)))))
         return (ind.sz/(r/1_000_000))
     
@@ -232,11 +231,5 @@ class MovingTransmissionDistNew(ciw.dists.Distribution):
     def sample(self, t=None, ind=None):
         distance = np.linalg.norm(self.coords[math.trunc(t)] - np.array([500,500]))
         r_div_t = 2*5 - 32.44 - 20*math.log10(distance*0.001) - 20*math.log10(5900)
-        #r = 10*(10**6)*math.log2(1+((0.2*(10**(r_div_t/10)))/(2*(10**6)*(10**(-17.4)))))
         r = 40*(10**6)*math.log2(1+((1*(10**(r_div_t/10)))/(40*(10**6)*(10**(-17.4)))))
         return (ind.sz/(r/1_000_000))
-
-def final(x):
-    r_div_t = 2*4 - 32.44 - 20*math.log10(x*0.001) - 20*math.log10(5900)
-    r = 40*(10**6)*math.log2(1+((1*(10**(r_div_t/10)))/(40*(10**6)*(10**(-17.4)))))
-    return r/1_000_000
