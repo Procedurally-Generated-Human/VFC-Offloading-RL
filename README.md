@@ -17,7 +17,7 @@ The core of the code focuses on the 3 custom VFC task-offloading gymnasium envir
 - Scenario 2: 10 Client Vehicles & 4 Service Vehicles --> `vfcenv10.py`
 - Scenario 3: 20 Client Vehicles & 8 Service Vehicles --> `vfcenv20.py`
   
-Modeling of the central queuing network present in all environments was implemented with help of Ciw. For those interested with creating a new offloading environment, I recommend digging into `custom_components.py`.
+Modeling of the central queuing network present in all environments was implemented with help of [Ciw](https://ciw.readthedocs.io/en/latest/). For those interested with creating a new offloading environment, I recommend digging into `custom_components.py`.
 
 ## Downloading & Testing
 First, install the latest version via git:
