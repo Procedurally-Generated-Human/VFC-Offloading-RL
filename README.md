@@ -12,7 +12,7 @@ Here, you can find the custom gymnasium environment used in the paper, as well a
 
 
 ## Gym Environments
-The core of the code focuses on the 3 custom VFC task-offloading gymnasium environments, Each environment corresponds to one of the 3 scenarios considered in the paper:
+The core of the code focuses on the 3 custom VFC task-offloading gymnasium environments. Each environment corresponds to one of the 3 scenarios considered in the paper:
 - Scenario 1: 5 Client Vehicles & 2 Service Vehicles --> `vfcenv.py`
 - Scenario 2: 10 Client Vehicles & 4 Service Vehicles --> `vfcenv10.py`
 - Scenario 3: 20 Client Vehicles & 8 Service Vehicles --> `vfcenv20.py`
