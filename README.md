@@ -1,6 +1,6 @@
 # Vehicular Fog Computing Task Offloading RL Environment
 
-This repository contains the source code of the following paper: <em>"Deep Reinforcement Learning for Delay-Optimized Task Offloading in Vehicular Fog Computing".</em> The pre-print version can be view here:
+This repository contains the source code of the following paper: <em>"Deep Reinforcement Learning for Delay-Optimized Task Offloading in Vehicular Fog Computing".</em> The pre-print version can be viewed here:
 https://arxiv.org/abs/2410.03472. 
 
 We appreciate citing the following IEEE conference version of the paper if you found this repository to be useful: https://ieeexplore.ieee.org/document/10967415
